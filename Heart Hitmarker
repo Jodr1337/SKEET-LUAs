@@ -16,7 +16,7 @@ local hearts = {}
 
 local heartpng
 
-http.get("https://i.imgur.com/8w2DBT5.png", function (s, r)
+http.get("https://i.imgur.com/IH2LZug.png", function (s, r)
     if not s or r.status ~= 200 then
         return
     end
@@ -67,7 +67,7 @@ local function heartmarker()
 		local y_add = (curtime - heart_time) * 30
 		local alpha = math.floor(255 - 255 * (curtime - heart_time))
 
-		draw_heart(x, y - y_add, 15, math.max(alpha, 15))
+		draw_heart(x, y - y_add, 14, math.max(alpha, 12))
 
 		if curtime > heart_time + 1 then
 			table.remove(hearts, i)
