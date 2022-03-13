@@ -1,0 +1,82 @@
+local http = require("gamesense/http")
+
+--[[
+    Heart Hitmarker
+    Owner: Jodr
+]]--
+
+local interface = {
+    enable = ui.new_checkbox("Visuals", "Other ESP", "Heartmarker"),
+    colorpicker = ui.new_color_picker("Visuals", "Other ESP", "Heartmarkerc", 255, 255, 255, 255)
+}
+
+
+
+local hearts = {}
+
+local heartpng
+
+http.get("https://i.imgur.com/8w2DBT5.png", function (s, r)
+    if not s or r.status ~= 200 then
+        return
+    end
+
+    heartpng = renderer.load_png(r.body, 800, 800)
+end)
+
+local function draw_heart(x, y, size, alpha)
+    local c = {ui.get(interface.colorpicker)}
+    -- divide bt 255 to get the percentage then multiply by the color picker alpha for premium level alpha fading
+    -- could just use the curtime - heartime but ion wanna fuck with it so ima do this fight me
+	renderer.texture(heartpng, x, y, size, size, c[1], c[2], c[3], (alpha / 255) * c[4], 'f')
+end
+
+local function on_hurt(e)
+	local ent = client.userid_to_entindex(e.userid)
+	local attacker = client.userid_to_entindex(e.attacker)
+
+	if attacker ~= entity.get_local_player() or not entity.is_enemy(ent) then
+		return
+	end
+
+	local hb = { entity.hitbox_position(ent, 3) }
+	local dmg = e.dmg_health
+	local curtime = globals.curtime()
+
+	table.insert(hearts, {
+		hitbox = hb,
+		time = curtime,
+		damage = dmg
+	})
+end
+
+local function heartmarker()
+	if not ui.get(interface.enable) then return end
+
+	local curtime = globals.curtime()
+
+	for i = 1, #hearts do
+		if hearts[i] == nil then return end
+
+		local heart_time = hearts[i].time
+		local damage = hearts[i].damage
+		local x, y = renderer.world_to_screen(hearts[i].hitbox[1], hearts[i].hitbox[2], hearts[i].hitbox[3])
+
+		if x == nil or y == nil then return end
+
+		local y_add = (curtime - heart_time) * 30
+		local alpha = math.floor(255 - 255 * (curtime - heart_time))
+
+		draw_heart(x, y - y_add, 15, math.max(alpha, 15))
+
+		if curtime > heart_time + 1 then
+			table.remove(hearts, i)
+		end
+	end
+end
+
+client.set_event_callback("player_hurt", function(e)
+	on_hurt(e)
+end)
+
+client.set_event_callback("paint", heartmarker)
